@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\GeneralApiException;
+use App\Http\Requests\NewsArticleRequest;
 use App\Http\Resources\NewsArticleCollection;
 use App\Http\Resources\NewsArticleRessource;
 use App\Models\NewsArticle;
 use App\Services\ApiService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class NewsArticleController extends Controller
@@ -32,9 +34,13 @@ class NewsArticleController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(NewsArticleRequest $request)
     {
-        $created = NewsArticle::create($request->all());
+        $newsArticleProperties = $request->validated();
+        if ($request->input('publish')) {
+            $newsArticleProperties['published_at'] = Carbon::now()->toDateTimeString();
+        }
+        $created = NewsArticle::create($newsArticleProperties);
 
         if ($created) {
             return $this->apiService->getSuccessResponse(
@@ -68,9 +74,18 @@ class NewsArticleController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(NewsArticleRequest $request, $id)
     {
         $newsArticle = NewsArticle::find($id);
+        throw_if(!$newsArticle, new GeneralApiException(
+            "News Article with ID $id was not found.", 404
+        ));
+
+        $newsArticleProperties = $request->validated();
+        if ($request->input('publish')) {
+            $newsArticleProperties['published_at'] = Carbon::now()->toDateTimeString();
+        }
+
         $newsArticle->update($request->all);
     }
 
