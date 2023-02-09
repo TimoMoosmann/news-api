@@ -82,9 +82,9 @@ class NewsArticleTest extends TestCase
                 ->where('id', 1)
                 ->where('title', $this->testArticle1Array['title'])
                 ->where('author', $this->testArticle1Array['author'])
-                ->where('text', $this->testArticle1Array['text'])
+                ->missing('text')
                 ->has('creation_date')
-                ->missing('publication_date')
+                ->missing('published_at')
                 ->etc()
         );
 
@@ -96,7 +96,7 @@ class NewsArticleTest extends TestCase
                 ->where('author', $this->testArticle2Array['author'])
                 ->where('text', $this->testArticle2Array['text'])
                 ->has('creation_date')
-                ->has('publication_date')
+                ->has('published_at')
                 ->etc()
         );
     }
@@ -112,7 +112,7 @@ class NewsArticleTest extends TestCase
                         ->where('author', $this->testArticle1Array['author'])
                         ->where('text', $this->testArticle1Array['text'])
                         ->has('creation_date')
-                        ->missing('publication_date')
+                        ->missing('published_at')
                         ->etc()
                 )
         );
