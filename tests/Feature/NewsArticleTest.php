@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use \Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Illuminate\Testing\Fluent\AssertableJson;
@@ -56,66 +55,95 @@ class NewsArticleTest extends TestCase
             ->assertStatus(404)
             ->assertJson([
                 'status' => 'error',
-                'message' => 'Article with ID 1 was not found.',
+                'message' => 'News Article with ID 1 was not found.',
             ]);
     }
 
     public function testCreateInitialArticles() {
-        $response = $this->postJson($this->newsArticlesApiBasePath, array_merge(
-            $this->testArticle1Array,
-            ['publish' => false,]
-        ));
+        $response = $this->createTestArticle1();
         $this->expectCreated($response, 1);
         
-
-        $response = $this->postJson($this->newsArticlesApiBasePath, array_merge(
-            $this->testArticle2Array,
-            ['publish' => true]
-        ));
+        $response = $this->createTestArticle2();
         $this->expectCreated($response, 2);
     }
 
     public function testViewSingleNewsArticle() {
+        $this->createTestArticle1();
+        $this->createTestArticle2();
+
         $response = $this->getJson("$this->newsArticlesApiBasePath/1");
         $response->assertJson(fn (AssertableJson $json) =>
             $json
-                ->where('id', 1)
-                ->where('title', $this->testArticle1Array['title'])
-                ->where('author', $this->testArticle1Array['author'])
-                ->missing('text')
-                ->has('creation_date')
-                ->missing('published_at')
+                ->where('data.id', 1)
+                ->where('data.title', $this->testArticle1Array['title'])
+                ->where('data.author', $this->testArticle1Array['author'])
+                ->missing('data.text')
+                ->has('data.created_at')
+                ->missing('data.published_at')
                 ->etc()
         );
 
         $response = $this->getJson("$this->newsArticlesApiBasePath/1");
         $response->assertJson(fn (AssertableJson $json) =>
             $json
-                ->where('id', 2)
-                ->where('title', $this->testArticle2Array['title'])
-                ->where('author', $this->testArticle2Array['author'])
-                ->where('text', $this->testArticle2Array['text'])
-                ->has('creation_date')
-                ->has('published_at')
+                ->where('data.id', 2)
+                ->where('data.title', $this->testArticle2Array['title'])
+                ->where('data.author', $this->testArticle2Array['author'])
+                ->where('data.text', $this->testArticle2Array['text'])
+                ->has('data.created_at')
+                ->has('data.published_at')
                 ->etc()
         );
     }
 
     public function testGetNewsArticlesList() {
-        $response = $this->getJson("$this->newsArticlesApiBasePath");
+        $this->createTestArticle1();
+        $this->createTestArticle2();
+
+        $response = $this->getJson($this->newsArticlesApiBasePath);
         $response->assertJson(fn (AssertableJson $json) =>
             $json->has(2)
                 ->first(fn ($json) =>
                     $json
-                        ->where('id', 1)
-                        ->where('title', $this->testArticle1Array['title'])
-                        ->where('author', $this->testArticle1Array['author'])
-                        ->where('text', $this->testArticle1Array['text'])
-                        ->has('creation_date')
-                        ->missing('published_at')
+                        ->where('data.id', 1)
+                        ->where('data.title', $this->testArticle1Array['title'])
+                        ->where('data.author', $this->testArticle1Array['author'])
+                        ->missing('data.text')
+                        ->has('data.created_at')
+                        ->missing('data.published_at')
                         ->etc()
                 )
         );
+    }
+
+    public function testUpdateNewsArticle() {
+        $response = $this->putJson("$this->newsArticlesApiBasePath/1", [
+            'title' => 'New Name',
+            'publish' => true,
+        ]);
+
+        $response->assertJson(fn (AssertableJson $json) =>
+            $json
+                ->where('data.id', 1)
+                ->where('data.title', 'New Title')
+                ->where('data.author', $this->testArticle1Array['author'])
+                ->where('data.text', $this->testArticle1Array['text'])
+                ->has('data.created_at')
+                ->has('data.published_at')
+                ->etc()
+        );
+    }
+
+    public function destroyNewsArticle() {
+        $response = $this->deleteJson("$this->newsArticlesApiBasePath/1");
+
+        $response->assertJson([
+            'status' => 'success',
+            'message' => 'Deleted News Article with ID 1',
+        ]);
+
+        $response = $this->getJson("$this->newsArticlesApiBasePath/1");
+        $response->assertStatus(404);
     }
 
     /*
@@ -144,6 +172,19 @@ class NewsArticleTest extends TestCase
     // test update
     // test destroy
 
+    private function createTestArticle1(): TestResponse {
+        return $this->postJson($this->newsArticlesApiBasePath, array_merge(
+            $this->testArticle1Array,
+            ['publish' => false,]
+        ));
+    }
+
+    private function createTestArticle2(): TestResponse {
+        return $this->postJson($this->newsArticlesApiBasePath, array_merge(
+            $this->testArticle2Array,
+            ['publish' => true]
+        ));
+    }
     private function expectCreated(TestResponse $response, int $expectedId) {
         $response
             ->assertStatus(201)
