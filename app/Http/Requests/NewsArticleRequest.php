@@ -24,7 +24,7 @@ class NewsArticleRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            'title' => ['unique:news_article', 'max:100'],
+            'title' => ['unique:news_articles', 'max:100'],
             'text' => ['min:20'],
             'author' => ['max:100'],
             'publish' => ['boolean'],
