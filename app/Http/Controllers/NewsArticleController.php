@@ -86,7 +86,7 @@ class NewsArticleController extends Controller
             $newsArticleProperties['published_at'] = Carbon::now()->toDateTimeString();
         }
 
-        $newsArticle->update($request->all);
+        $newsArticle->update($newsArticleProperties);
     }
 
     /**
